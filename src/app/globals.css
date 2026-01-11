@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0f172a;
+  --foreground: #e2e8f0;
+  --crimson: #8B0000;
+  --ice-blue: #4A5568;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-crimson: var(--crimson);
+  --color-ice-blue: var(--ice-blue);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --animate-typewriter: typewriter 2s steps(40) 1 normal both;
+  --animate-fade-in: fadeIn 1s ease-in forwards;
+
+  @keyframes typewriter {
+    0% { width: 0%; }
+    100% { width: 100%; }
+  }
+
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), sans-serif;
+}
