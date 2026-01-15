@@ -19,9 +19,14 @@ const MAX_SPEED = 15;
 const TUCK_MAX_SPEED = 22;
 const TUCK_ACCEL = 0.2;
 
+export type GameStatus = 'START_SCREEN' | 'RACING' | 'FINISHED' | 'CRASHED';
+
 export function useGamePhysics() {
     // Generate world once on mount
     const [worldObjects] = useState<WorldObject[]>(() => generateCourse());
+    const [gameState, setGameState] = useState<GameStatus>('RACING'); // Keeping RACING default for now until menu exists
+
+    // ... rest of state
 
     const [player, setPlayer] = useState<PlayerState>({
         x: 50,
@@ -154,7 +159,17 @@ export function useGamePhysics() {
             };
         });
 
-    }, [worldObjects]); // Added dependency
+    }, [worldObjects, gameState]); // Added dependency
 
-    return { player, ai, worldObjects, updatePhysics };
+    // Check for Finish Line (outside the physics loop to avoid deep nesting issues with state setters that trigger re-renders? 
+    // Actually, best to do it inside. But we need to setGameState. 
+    // We can do a useEffect to monitor player.y)
+
+    useEffect(() => {
+        if (player.y >= 5000 && gameState === 'RACING') {
+            setGameState('FINISHED');
+        }
+    }, [player.y, gameState]);
+
+    return { player, ai, worldObjects, updatePhysics, gameState };
 }

@@ -2,9 +2,11 @@
 
 import { useRef, useEffect } from 'react';
 import { useGamePhysics } from '../hooks/useGamePhysics';
+import { useAssetLoader } from '../hooks/useAssetLoader';
 
 export default function GameEngine() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const { assets, loaded } = useAssetLoader();
     const { player, ai, worldObjects, updatePhysics } = useGamePhysics();
     const requestRef = useRef<number>(0);
 
@@ -80,30 +82,38 @@ export default function GameEngine() {
         ctx.fillStyle = '#1e293b'; // Tree trunk color
 
         worldObjects.forEach(obj => {
-            // Calculate relative Y position
-            // If player is at y=1000, and obj is at y=1200, it should be BELOW player.
-            // Screen Y = PlayerScreenY + (ObjY - PlayerY)
             const objScreenY = playerScreenY + (obj.y - player.y);
-
-            // Transform absolute % X to screen X
             const objScreenX = (obj.x / 100) * ctx.canvas.width;
 
-            // Simple culling
             if (objScreenY < -100 || objScreenY > ctx.canvas.height + 100) return;
 
             if (obj.type === 'TREE') {
-                // Draw Triangle Type Tree
-                ctx.fillStyle = '#0f766e';
-                ctx.beginPath();
-                ctx.moveTo(objScreenX, objScreenY - obj.height); // Top
-                ctx.lineTo(objScreenX - obj.width / 2, objScreenY); // Bottom Left
-                ctx.lineTo(objScreenX + obj.width / 2, objScreenY); // Bottom Right
-                ctx.fill();
+                if (assets['TREE_1']) {
+                    ctx.drawImage(assets['TREE_1'], objScreenX - obj.width / 2, objScreenY - obj.height, obj.width, obj.height);
+                } else {
+                    ctx.fillStyle = '#0f766e';
+                    ctx.beginPath();
+                    ctx.moveTo(objScreenX, objScreenY - obj.height);
+                    ctx.lineTo(objScreenX - obj.width / 2, objScreenY);
+                    ctx.lineTo(objScreenX + obj.width / 2, objScreenY);
+                    ctx.fill();
+                }
             } else if (obj.type === 'LANDMARK_ROCK') {
-                ctx.fillStyle = '#64748b'; // Rock Gray
-                ctx.fillRect(objScreenX - obj.width / 2, objScreenY - obj.height, obj.width, obj.height);
+                if (assets['LANDMARK_ROCK']) {
+                    ctx.drawImage(assets['LANDMARK_ROCK'], objScreenX - obj.width / 2, objScreenY - obj.height, obj.width, obj.height);
+                } else {
+                    ctx.fillStyle = '#64748b';
+                    ctx.fillRect(objScreenX - obj.width / 2, objScreenY - obj.height, obj.width, obj.height);
+                }
+            } else if (obj.type === 'LANDMARK_LODGE') {
+                if (assets['LANDMARK_LODGE']) {
+                    ctx.drawImage(assets['LANDMARK_LODGE'], objScreenX - obj.width / 2, objScreenY - obj.height, obj.width, obj.height);
+                } else {
+                    ctx.fillStyle = '#7c2d12'; // Wood color
+                    ctx.fillRect(objScreenX - obj.width / 2, objScreenY - obj.height, obj.width, obj.height);
+                }
             } else if (obj.type === 'ICE_PATCH') {
-                ctx.fillStyle = '#bfdbfe'; // Light Blue Ice
+                ctx.fillStyle = '#bfdbfe';
                 ctx.globalAlpha = 0.5;
                 ctx.beginPath();
                 ctx.ellipse(objScreenX, objScreenY, obj.width, obj.height / 2, 0, 0, Math.PI * 2);
