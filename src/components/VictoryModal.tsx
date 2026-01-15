@@ -22,9 +22,15 @@ export function VictoryModal({ suspectName, onPlayAgain }: VictoryModalProps) {
                 {/* Background Highlight */}
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-yellow-600 via-yellow-400 to-yellow-600"></div>
 
-                <div className="mb-6 flex justify-center">
-                    <div className="p-4 bg-yellow-500/10 rounded-full border border-yellow-500/20 shadow-[0_0_30px_rgba(234,179,8,0.2)]">
-                        <Trophy className="w-16 h-16 text-yellow-500" />
+                <div className="mb-6 flex justify-center w-full relative h-48 rounded-lg overflow-hidden border border-yellow-500/20 shadow-xl">
+                    <img
+                        src="/images/victory.jpg"
+                        alt="Victory - The Eagle Trophy"
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-slate-900 to-transparent"></div>
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 p-3 bg-yellow-500/20 rounded-full border border-yellow-500/30 backdrop-blur-sm">
+                        <Trophy className="w-8 h-8 text-yellow-400" />
                     </div>
                 </div>
 
