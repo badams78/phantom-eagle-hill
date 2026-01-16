@@ -1,18 +1,12 @@
 import { useState, useEffect } from 'react';
 
 // Define the assets we need to load
+// Define the assets we need to load
 const ASSETS = {
-    'TREE_1': '/images/new_assets/photo_08.jpg', // Using photo for tree? Maybe use simple tree for now or find better asset
-    // Ideally we'd use a transparent PNG for trees. For now, let's use placeholders OR mapped images.
-    // The user provided lots of photos. "photo_08.jpg" is likely a scene.
-    // Let's stick to using the LANDMARKS primarily for the new assets.
-
-    // Landmarks
-    'LANDMARK_ROCK': '/images/new_assets/easton-profile-1.jpg', // Placeholder for The Rock
-    'LANDMARK_LODGE': '/images/new_assets/easton-ski-hill-a.jpg', // Placeholder for Lodge
-    'ICE': '/images/new_assets/easton-map-2017.jpg', // Just using map as texture? No, stick to drawing ice.
-
-    // Sprites (if we had them, defaulting to null to force fallback drawing)
+    'TREE_1': null, // Reverting to procedural drawing for quality control
+    'LANDMARK_ROCK': null,
+    'LANDMARK_LODGE': null,
+    'ICE': null,
     'SPRITE_PLAYER': null,
     'SPRITE_AI': null,
 };
