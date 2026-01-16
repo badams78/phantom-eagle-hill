@@ -34,7 +34,30 @@ export default function GameEngine() {
     // Quick reload for now to "Restart" (Physics hook needs a reset function, but reload is safer for proto)
     const handleRestart = () => window.location.reload();
 
+    // Sync State to Refs for the Animation Loop
+    const playerRef = useRef(player);
+    const aiRef = useRef(ai);
+    const worldObjectsRef = useRef(worldObjects);
+    const gameStateRef = useRef(gameState);
+    const assetsRef = useRef(assets);
+    const updatePhysicsRef = useRef(updatePhysics);
+
+    useEffect(() => {
+        playerRef.current = player;
+        aiRef.current = ai;
+        worldObjectsRef.current = worldObjects;
+        gameStateRef.current = gameState;
+        assetsRef.current = assets;
+        updatePhysicsRef.current = updatePhysics;
+    });
+
     const draw = (ctx: CanvasRenderingContext2D) => {
+        const p = playerRef.current;
+        const a = aiRef.current;
+        const wObjs = worldObjectsRef.current;
+        const gState = gameStateRef.current;
+        const asts = assetsRef.current;
+
         // Clear Canvas
         const bgGradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
         bgGradient.addColorStop(0, '#f1f5f9'); // Slate 100
@@ -43,15 +66,11 @@ export default function GameEngine() {
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
         // --- CAMERA & VIEWPORT ---
-        // Player is fixed at Y = 200
         const playerScreenY = 200;
 
-        // Draw Snow Tracks (Simple lines behind player and AI)
-        // (For a future iteration: store trail points)
-
         // --- DRAW WORLD OBJECTS ---
-        worldObjects.forEach(obj => {
-            const objScreenY = playerScreenY + (obj.y - player.y);
+        wObjs.forEach(obj => {
+            const objScreenY = playerScreenY + (obj.y - p.y);
             const objScreenX = (obj.x / 100) * ctx.canvas.width;
 
             if (objScreenY < -100 || objScreenY > ctx.canvas.height + 100) return;
@@ -70,27 +89,26 @@ export default function GameEngine() {
 
                 // Foliage (Deep Green)
                 ctx.fillStyle = '#065f46';
-                // Bottom Tier
+                // Bottom
                 ctx.beginPath();
                 ctx.moveTo(objScreenX - obj.width / 2, objScreenY - 10);
                 ctx.lineTo(objScreenX, objScreenY - obj.height * 0.6);
                 ctx.lineTo(objScreenX + obj.width / 2, objScreenY - 10);
                 ctx.fill();
-                // Middle Tier
+                // Middle
                 ctx.beginPath();
                 ctx.moveTo(objScreenX - obj.width / 2.5, objScreenY - obj.height * 0.4);
                 ctx.lineTo(objScreenX, objScreenY - obj.height * 0.9);
                 ctx.lineTo(objScreenX + obj.width / 2.5, objScreenY - obj.height * 0.4);
                 ctx.fill();
-                // Top Tier
-                ctx.fillStyle = '#047857'; // Lighter green top
+                // Top
+                ctx.fillStyle = '#047857';
                 ctx.beginPath();
                 ctx.moveTo(objScreenX - obj.width / 3.5, objScreenY - obj.height * 0.7);
-                ctx.lineTo(objScreenX, objScreenY - obj.height * 1.1); // Tip
+                ctx.lineTo(objScreenX, objScreenY - obj.height * 1.1);
                 ctx.lineTo(objScreenX + obj.width / 3.5, objScreenY - obj.height * 0.7);
                 ctx.fill();
-
-                // Snow overlap
+                // Snow
                 ctx.fillStyle = '#e2e8f0';
                 ctx.beginPath();
                 ctx.moveTo(objScreenX, objScreenY - obj.height * 1.1);
@@ -116,9 +134,8 @@ export default function GameEngine() {
                 ctx.fill();
 
             } else if (obj.type === 'LANDMARK_LODGE') {
-                ctx.fillStyle = '#7c2d12'; // Wood color
+                ctx.fillStyle = '#7c2d12';
                 ctx.fillRect(objScreenX - obj.width / 2, objScreenY - obj.height, obj.width, obj.height);
-                // Roof
                 ctx.fillStyle = '#334155';
                 ctx.beginPath();
                 ctx.moveTo(objScreenX - obj.width / 2 - 10, objScreenY - obj.height);
@@ -137,9 +154,7 @@ export default function GameEngine() {
             } else if (obj.type.startsWith('GATE')) {
                 const color = obj.type === 'GATE_LEFT' ? '#ef4444' : '#3b82f6';
                 ctx.fillStyle = color;
-                // Pole
                 ctx.fillRect(objScreenX - 2, objScreenY - 30, 4, 30);
-                // Flag
                 ctx.beginPath();
                 ctx.moveTo(objScreenX + 2, objScreenY - 30);
                 ctx.lineTo(objScreenX + 25, objScreenY - 25);
@@ -149,7 +164,7 @@ export default function GameEngine() {
         });
 
         // --- DRAW PLAYER ---
-        const playerScreenX = (player.x / 100) * ctx.canvas.width;
+        const playerScreenX = (p.x / 100) * ctx.canvas.width;
 
         // Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.2)';
@@ -160,81 +175,57 @@ export default function GameEngine() {
         // Skis
         ctx.strokeStyle = '#333';
         ctx.lineWidth = 4;
-        const turnAngle = player.speedX * 0.5; // Tilt skis based on turn
+        const turnAngle = p.speedX * 0.5;
 
         ctx.save();
         ctx.translate(playerScreenX, playerScreenY);
         ctx.rotate(turnAngle);
 
-        // Left Ski
-        ctx.beginPath();
-        ctx.moveTo(-10, -10);
-        ctx.lineTo(-10, 25);
-        ctx.stroke();
-        // Right Ski
-        ctx.beginPath();
-        ctx.moveTo(10, -10);
-        ctx.lineTo(10, 25);
-        ctx.stroke(); // Parallel skiing
+        ctx.beginPath(); ctx.moveTo(-10, -10); ctx.lineTo(-10, 25); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(10, -10); ctx.lineTo(10, 25); ctx.stroke();
 
-        // Body (Eaglebrook Green)
+        // Body
         ctx.fillStyle = '#059669';
         ctx.beginPath();
-        if (player.isTucking) {
-            // Tucked pose (Egg shape)
+        if (p.isTucking) {
             ctx.ellipse(0, 5, 12, 16, 0, 0, Math.PI * 2);
             ctx.fill();
-            // Head lower
-            ctx.fillStyle = '#fce7f3'; // Skin
+            ctx.fillStyle = '#fce7f3';
             ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill();
         } else {
-            // Standing pose
-            ctx.fillRect(-8, -15, 16, 25); // Torso
-            // Head
-            ctx.fillStyle = '#fce7f3'; // Skin
+            ctx.fillRect(-8, -15, 16, 25);
+            ctx.fillStyle = '#fce7f3';
             ctx.beginPath(); ctx.arc(0, -22, 9, 0, Math.PI * 2); ctx.fill();
-            // Helmet/Hat
             ctx.fillStyle = '#064e3b';
             ctx.beginPath(); ctx.arc(0, -24, 9, Math.PI, 0); ctx.fill();
         }
-
         ctx.restore();
 
         // --- DRAW AI OPPONENT ---
-        const aiScreenY = playerScreenY + (ai.y - player.y);
-        const aiScreenX = (ai.x / 100) * ctx.canvas.width;
+        const aiScreenY = playerScreenY + (a.y - p.y);
+        const aiScreenX = (a.x / 100) * ctx.canvas.width;
 
         if (aiScreenY > -50 && aiScreenY < ctx.canvas.height + 50) {
-            // Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.2)';
             ctx.beginPath();
             ctx.ellipse(aiScreenX, aiScreenY + 5, 20, 6, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Skis
             ctx.strokeStyle = '#333';
             ctx.lineWidth = 4;
 
             ctx.save();
             ctx.translate(aiScreenX, aiScreenY);
-            // AI simple tilt
-            ctx.rotate(ai.speedX * 0.3);
-
-            // Left Ski
+            ctx.rotate(a.speedX * 0.3);
             ctx.beginPath(); ctx.moveTo(-10, -10); ctx.lineTo(-10, 25); ctx.stroke();
-            // Right Ski
             ctx.beginPath(); ctx.moveTo(10, -10); ctx.lineTo(10, 25); ctx.stroke();
 
-            // Body (Cardigan Red)
             ctx.fillStyle = '#dc2626';
             ctx.fillRect(-8, -15, 16, 25);
-            // Head
             ctx.fillStyle = '#fce7f3';
             ctx.beginPath(); ctx.arc(0, -22, 9, 0, Math.PI * 2); ctx.fill();
-
             ctx.restore();
 
-            // Label
             ctx.fillStyle = 'black';
             ctx.font = 'bold 10px sans-serif';
             ctx.textAlign = 'center';
@@ -245,16 +236,15 @@ export default function GameEngine() {
         // HUD
         ctx.fillStyle = '#0f172a';
         ctx.font = 'bold 20px sans-serif';
-        ctx.fillText(`${Math.round(player.speedY * 2.2)} MPH`, 20, 40); // Fake convert to reasonable MPH
+        ctx.fillText(`${Math.round(p.speedY * 2.2)} MPH`, 20, 40);
 
-        // Distance Bar
-        const progress = Math.min(1, player.y / 5000);
+        const progress = Math.min(1, p.y / 5000);
         ctx.fillStyle = 'rgba(0,0,0,0.1)';
         ctx.fillRect(20, 60, 200, 10);
         ctx.fillStyle = '#16a34a';
         ctx.fillRect(20, 60, 200 * progress, 10);
 
-        if (player.isTucking) {
+        if (p.isTucking) {
             ctx.fillStyle = '#dc2626';
             ctx.font = 'bold 16px sans-serif';
             ctx.fillText("AERO TUCK ACTIVE", 20, 95);
@@ -262,31 +252,35 @@ export default function GameEngine() {
     };
 
     const loop = () => {
-        updatePhysics();
+        // Update Physics (via Ref)
+        if (updatePhysicsRef.current) updatePhysicsRef.current();
 
-        // Audio Loop
-        if (gameState === 'RACING') {
-            updateSkiSound(player.speedY);
+        // Audio Updates
+        if (gameStateRef.current === 'RACING') {
+            updateSkiSound(playerRef.current.speedY);
         }
 
+        // Draw Frame
         if (canvasRef.current) {
             const ctx = canvasRef.current.getContext('2d');
             if (ctx) {
-                // Handle High DPI scaling
+                // Resize handling
                 const rect = canvasRef.current.getBoundingClientRect();
-                canvasRef.current.width = rect.width;
-                canvasRef.current.height = rect.height;
-
+                if (canvasRef.current.width !== rect.width || canvasRef.current.height !== rect.height) {
+                    canvasRef.current.width = rect.width;
+                    canvasRef.current.height = rect.height;
+                }
                 draw(ctx);
             }
         }
         requestRef.current = requestAnimationFrame(loop);
     };
 
+    // Start Loop Once
     useEffect(() => {
         requestRef.current = requestAnimationFrame(loop);
         return () => cancelAnimationFrame(requestRef.current);
-    }, [updatePhysics]);
+    }, []);
 
     return (
         <div className="relative w-full h-[600px] border-4 border-slate-800 rounded-lg overflow-hidden bg-slate-50 shadow-2xl">
