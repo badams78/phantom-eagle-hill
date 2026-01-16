@@ -3,13 +3,33 @@
 import { useRef, useEffect } from 'react';
 import { useGamePhysics } from '../hooks/useGamePhysics';
 import { useAssetLoader } from '../hooks/useAssetLoader';
+import { useAudioSystem } from '../hooks/useAudioSystem';
 import ResultOverlay from './ResultOverlay';
 
 export default function GameEngine() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const { assets, loaded } = useAssetLoader();
     const { player, ai, worldObjects, updatePhysics, gameState, startGame } = useGamePhysics();
+    const { initAudio, updateSkiSound, playCrash, playVictory } = useAudioSystem();
+
     const requestRef = useRef<number>(0);
+
+    // Audio State Triggers
+    useEffect(() => {
+        if (gameState === 'CRASHED') {
+            updateSkiSound(0); // Stop wind
+            playCrash();
+        } else if (gameState === 'FINISHED') {
+            updateSkiSound(0); // Stop wind
+            playVictory();
+        }
+    }, [gameState, playCrash, playVictory, updateSkiSound]);
+
+    // Enhanced Start Handler
+    const handleStart = () => {
+        initAudio(); // Required to resume context
+        startGame();
+    };
 
     // Quick reload for now to "Restart" (Physics hook needs a reset function, but reload is safer for proto)
     const handleRestart = () => window.location.reload();
@@ -244,6 +264,11 @@ export default function GameEngine() {
     const loop = () => {
         updatePhysics();
 
+        // Audio Loop
+        if (gameState === 'RACING') {
+            updateSkiSound(player.speedY);
+        }
+
         if (canvasRef.current) {
             const ctx = canvasRef.current.getContext('2d');
             if (ctx) {
@@ -275,7 +300,7 @@ export default function GameEngine() {
             <ResultOverlay
                 status={gameState}
                 onRestart={handleRestart}
-                onStart={startGame}
+                onStart={handleStart}
             />
         </div>
     );
